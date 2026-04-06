@@ -14,22 +14,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: List files (For Debugging)
-      # هذا الأمر سيطبع الملفات للتأكد من المسار إذا فشل البناء مرة أخرى
-      run: ls -R
+    - name: Set Xcode Version
+      run: sudo xcode-select -s /Applications/Xcode.app
 
     - name: Build iOS App
       run: |
-        # سنستخدم البحث التلقائي عن ملف المشروع لضمان الوصول إليه
-        PROJECT_PATH=$(find . -name "*.xcodeproj" | head -n 1)
-        SCHEME_NAME=$(xcodebuild -list -project "$PROJECT_PATH" | grep -A 5 "Schemes:" | tail -n 1 | xargs)
-        
-        echo "Found Project: $PROJECT_PATH"
-        echo "Found Scheme: $SCHEME_NAME"
-        
         xcodebuild build \
-          -project "$PROJECT_PATH" \
-          -scheme "$SCHEME_NAME" \
+          -project "iSign/iSign.xcodeproj" \
+          -scheme "iSign" \
           -sdk iphoneos \
           -configuration Debug \
-          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO
