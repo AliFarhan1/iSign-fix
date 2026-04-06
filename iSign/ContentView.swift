@@ -2,84 +2,81 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct ContentView: View {
-    @State private var isImporting: Bool = false
-    @State private var selectedFileName: String = "اسحب IPA أو اضغط للاختيار"
-    
-    // تعريف الأنواع بشكل آمن لتجنب أخطاء البناء
-    let ipaType = UTType(filenameExtension: "ipa") ?? .data
-    let dylibType = UTType(filenameExtension: "dylib") ?? .data
+    @State private var isPickerPresented = false
+    @State private var fileName = "لم يتم اختيار ملف"
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color(UIColor.systemBackground).edgesIgnoringSafeArea(.all)
-                
-                VStack(spacing: 25) {
-                    // الجزء العلوي
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text("iSign")
-                                .font(.system(size: 40, weight: .black, design: .rounded))
-                            Text("توقيع التطبيقات بسهولة")
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                // الجزء العلوي (Header)
+                VStack {
+                    Text("iSign")
+                        .font(.system(size: 45, weight: .black, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("إصدار الإصلاح الشامل 2026")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, geo.safeAreaInsets.top + 20)
+                .padding(.bottom, 30)
+
+                // منطقة الرفع (Upload Zone)
+                Button(action: { isPickerPresented = true }) {
+                    VStack(spacing: 20) {
+                        Image(systemName: "arrow.down.doc.fill")
+                            .font(.system(size: 80))
+                            .symbolRenderingMode(.hierarchical)
+                        
+                        VStack(spacing: 8) {
+                            Text(fileName)
+                                .font(.headline)
+                                .lineLimit(1)
+                            Text("اضغط هنا لاختيار ملف IPA أو Dylib")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
-                        Spacer()
-                        Image(systemName: "plus.app.fill")
-                            .font(.system(size: 35))
-                            .foregroundColor(.blue)
-                    }
-                    .padding(.top, geometry.safeAreaInsets.top + 10)
-                    .padding(.horizontal)
-
-                    // صندوق رفع الملفات
-                    VStack(spacing: 20) {
-                        Image(systemName: "doc.badge.plus")
-                            .font(.system(size: 70))
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundColor(.blue)
-                        
-                        Text(selectedFileName)
-                            .font(.headline)
-                            .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: geometry.size.height * 0.45)
-                    .background(RoundedRectangle(cornerRadius: 30).fill(Color(UIColor.secondarySystemBackground)))
+                    .frame(height: geo.size.height * 0.45)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(35)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 30)
-                            .stroke(Color.blue.opacity(0.5), style: StrokeStyle(lineWidth: 3, dash: [8]))
+                        RoundedRectangle(cornerRadius: 35)
+                            .stroke(Color.blue.opacity(0.5), style: StrokeStyle(lineWidth: 3, dash: [10]))
                     )
-                    .padding(.horizontal)
-                    .onTapGesture {
-                        isImporting = true
-                    }
-
-                    Spacer()
-
-                    // أزرار التحكم السفلية
-                    Button(action: { isImporting = true }) {
-                        Text("اختر ملف IPA")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(Color.blue)
-                            .cornerRadius(20)
-                            .shadow(color: Color.blue.opacity(0.3), radius: 10, x: 0, y: 5)
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, geometry.safeAreaInsets.bottom + 10)
                 }
+                .padding(.horizontal, 25)
+
+                Spacer()
+
+                // زر التوقيع السفلي
+                Button(action: { isPickerPresented = true }) {
+                    HStack {
+                        Image(systemName: "pencil.tip.crop.circle.badge.plus")
+                        Text("بدء عملية التوقيع")
+                    }
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(22)
+                    .shadow(radius: 10, y: 5)
+                }
+                .padding(.horizontal, 25)
+                .padding(.bottom, geo.safeAreaInsets.bottom + 15)
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
+        .edgesIgnoringSafeArea(.all)
         .fileImporter(
-            isPresented: $isImporting,
-            allowedContentTypes: [ipaType, dylibType, .zip, .data],
+            isPresented: $isPickerPresented,
+            allowedContentTypes: [.data, .zip, UTType(filenameExtension: "ipa") ?? .data],
             allowsMultipleSelection: false
         ) { result in
             if case .success(let urls) = result {
-                selectedFileName = urls.first?.lastPathComponent ?? "ملف غير معروف"
+                fileName = urls.first?.lastPathComponent ?? "ملف غير معروف"
             }
         }
     }
