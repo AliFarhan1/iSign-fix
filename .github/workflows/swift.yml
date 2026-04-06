@@ -1,4 +1,4 @@
-name: iOS Build
+name: iOS Build Fixed
 
 on:
   push:
@@ -13,25 +13,32 @@ jobs:
     - name: Set Xcode
       run: sudo xcode-select -s /Applications/Xcode.app
 
-    - name: Build and Archive
+    - name: Clean and Build
       run: |
+        # تنظيف المجلدات قبل البناء
+        xcodebuild clean -project "iSign/iSign.xcodeproj" -scheme "iSign"
+        
+        # بناء الأرشيف مع تجاهل أخطاء التوقيع
         xcodebuild archive \
           -project "iSign/iSign.xcodeproj" \
           -scheme "iSign" \
           -archivePath "build/iSign.xcarchive" \
           -sdk iphoneos \
-          -configuration Release \
+          -configuration Debug \
           CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO
+          CODE_SIGNING_REQUIRED=NO \
+          COMPILER_INDEX_STORE_ENABLE=NO
 
-    - name: Export IPA
+    - name: Prepare IPA
       run: |
-        mkdir -p build/Payload
-        cp -r "build/iSign.xcarchive/Products/Applications/iSign.app" build/Payload/
-        cd build && zip -r iSign.ipa Payload
+        mkdir -p output/Payload
+        # البحث عن ملف الـ .app ونسخه بغض النظر عن مكانه
+        APP_PATH=$(find build/iSign.xcarchive -name "*.app" | head -n 1)
+        cp -r "$APP_PATH" output/Payload/
+        cd output && zip -r iSign_Fixed.ipa Payload
 
-    - name: Upload
+    - name: Upload Finished IPA
       uses: actions/upload-artifact@v4
       with:
-        name: iSign-Fixed-App
-        path: build/iSign.ipa
+        name: iSign-Working-Version
+        path: output/iSign_Fixed.ipa
