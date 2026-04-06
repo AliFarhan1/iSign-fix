@@ -5,10 +5,18 @@ struct ContentView: View {
     @State private var isImporting: Bool = false
     @State private var selectedFileName: String = "اسحب IPA أو اضغط للاختيار"
 
+    // تعريف أنواع الملفات المدعومة بشكل آمن
+    let supportedTypes: [UTType] = [
+        UTType.data, 
+        UTType.zip,
+        UTType(filenameExtension: "ipa") ?? .data,
+        UTType(filenameExtension: "dylib") ?? .data
+    ]
+
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 20) {
-                // الهيدر - يحترم منطقة النوتش
+                // الرأس (Header)
                 HStack {
                     Text("iSign")
                         .font(.system(size: 34, weight: .bold, design: .rounded))
@@ -16,10 +24,10 @@ struct ContentView: View {
                     Image(systemName: "gearshape.fill")
                         .font(.title2)
                 }
-                .padding(.top, geometry.safeAreaInsets.top > 0 ? geometry.safeAreaInsets.top : 20)
+                .padding(.top, geometry.safeAreaInsets.top > 20 ? geometry.safeAreaInsets.top : 30)
                 .padding(.horizontal)
 
-                // منطقة اختيار الملفات - مرنة بالكامل
+                // منطقة اختيار الملف (Box)
                 VStack(spacing: 15) {
                     Image(systemName: "square.and.arrow.down.fill")
                         .font(.system(size: 60))
@@ -29,13 +37,9 @@ struct ContentView: View {
                         .font(.headline)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
-                    
-                    Text("يدعم ملفات .ipa و .zip و .dylib")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: geometry.size.height * 0.4) // يأخذ 40% من طول الشاشة مهما كان نوع الآيفون
+                .frame(height: geometry.size.height * 0.4)
                 .background(Color(UIColor.secondarySystemBackground))
                 .cornerRadius(20)
                 .overlay(
@@ -49,60 +53,36 @@ struct ContentView: View {
 
                 Spacer()
 
-                // أزرار التحكم السفلية - تحترم منطقة السحب السفلي
-                VStack(spacing: 12) {
-                    Button(action: { isImporting = true }) {
-                        Label("اختيار ملف", systemImage: "plus.circle.fill")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                    }
-                    
-                    HStack(spacing: 15) {
-                        BottomBarItem(icon: "doc.text.fill", title: "الملفات")
-                        BottomBarItem(icon: "pencil.tip.crop.circle", title: "التوقيع")
-                        BottomBarItem(icon: "checkmark.seal.fill", title: "الشهادات")
-                        BottomBarItem(icon: "cpu", title: "المكتبات")
-                    }
+                // زر الاختيار السفلي
+                Button(action: { isImporting = true }) {
+                    Label("اختيار ملف", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
                 }
                 .padding(.horizontal)
                 .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? geometry.safeAreaInsets.bottom : 20)
             }
         }
         .edgesIgnoringSafeArea(.all)
+        // هذا الجزء هو الذي تسبب في الخطأ وتم إصلاحه هنا
         .fileImporter(
             isPresented: $isImporting,
-            allowedContentTypes: [
-                UTType(filenameExtension: "ipa")!,
-                UTType(filenameExtension: "dylib")!,
-                .zip,
-                .data
-            ],
+            allowedContentTypes: supportedTypes,
             allowsMultipleSelection: false
         ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
+            do {
+                let selectedFiles = try result.get()
+                if let url = selectedFiles.first {
                     selectedFileName = url.lastPathComponent
+                    // هنا يمكنك إضافة منطق معالجة الملف بعد اختياره
                 }
-            case .failure(let error):
-                print("Error selecting file: \(error.localizedDescription)")
+            } catch {
+                print("فشل اختيار الملف: \(error.localizedDescription)")
             }
         }
-    }
-}
-
-struct BottomBarItem: View {
-    let icon: String
-    let title: String
-    var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-            Text(title).font(.system(size: 10))
-        }
-        .frame(maxWidth: .infinity)
-        .foregroundColor(.secondary)
     }
 }
