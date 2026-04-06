@@ -20,7 +20,10 @@ jobs:
         run: |
           # البحث عن ملف المشروع تلقائياً
           PROJ_PATH=$(find . -name "*.xcodeproj" -not -path "*/.*" | head -n 1)
-          if [ -z "$PROJ_PATH" ]; then echo "Project not found!"; exit 1; ffi
+          if [ -z "$PROJ_PATH" ]; then 
+            echo "Project not found!"
+            exit 1
+          fi
           
           # استخراج الـ Scheme
           SCHEME_NAME=$(xcodebuild -list -project "$PROJ_PATH" | grep -A 5 "Schemes:" | tail -n 1 | xargs)
@@ -41,7 +44,10 @@ jobs:
         run: |
           mkdir -p output/Payload
           APP_PATH=$(find build/iSign.xcarchive -name "*.app" | head -n 1)
-          if [ -z "$APP_PATH" ]; then echo "App file not found!"; exit 1; ffi
+          if [ -z "$APP_PATH" ]; then 
+            echo "App file not found!"
+            exit 1
+          fi
           cp -r "$APP_PATH" output/Payload/
           cd output && zip -r iSign_Final.ipa Payload
 
