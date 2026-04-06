@@ -1,4 +1,4 @@
-name: iOS Build Fixed
+name: iOS Universal Build
 
 on:
   push:
@@ -10,35 +10,35 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set Xcode
-      run: sudo xcode-select -s /Applications/Xcode.app
-
-    - name: Clean and Build
+    - name: Find and Build Project
       run: |
-        # تنظيف المجلدات قبل البناء
-        xcodebuild clean -project "iSign/iSign.xcodeproj" -scheme "iSign"
+        # البحث عن ملف المشروع تلقائياً
+        PROJ_PATH=$(find . -name "*.xcodeproj" -not -path "*/.*" | head -n 1)
+        PROJ_DIR=$(dirname "$PROJ_PATH")
+        PROJ_NAME=$(basename "$PROJ_PATH")
+        # استخراج اسم الـ Scheme تلقائياً
+        SCHEME_NAME=$(xcodebuild -list -project "$PROJ_PATH" | grep -A 5 "Schemes:" | tail -n 1 | xargs)
         
-        # بناء الأرشيف مع تجاهل أخطاء التوقيع
+        echo "Building Project: $PROJ_NAME in $PROJ_DIR with Scheme: $SCHEME_NAME"
+        
         xcodebuild archive \
-          -project "iSign/iSign.xcodeproj" \
-          -scheme "iSign" \
+          -project "$PROJ_PATH" \
+          -scheme "$SCHEME_NAME" \
           -archivePath "build/iSign.xcarchive" \
           -sdk iphoneos \
           -configuration Debug \
           CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO \
-          COMPILER_INDEX_STORE_ENABLE=NO
+          CODE_SIGNING_REQUIRED=NO
 
-    - name: Prepare IPA
+    - name: Create IPA
       run: |
         mkdir -p output/Payload
-        # البحث عن ملف الـ .app ونسخه بغض النظر عن مكانه
         APP_PATH=$(find build/iSign.xcarchive -name "*.app" | head -n 1)
         cp -r "$APP_PATH" output/Payload/
-        cd output && zip -r iSign_Fixed.ipa Payload
+        cd output && zip -r iSign_Final.ipa Payload
 
-    - name: Upload Finished IPA
+    - name: Upload IPA
       uses: actions/upload-artifact@v4
       with:
-        name: iSign-Working-Version
-        path: output/iSign_Fixed.ipa
+        name: iSign-App
+        path: output/iSign_Final.ipa
