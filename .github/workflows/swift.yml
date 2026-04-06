@@ -1,4 +1,4 @@
-name: iOS Universal Build
+name: iOS Build Fixed
 
 on:
   push:
@@ -10,25 +10,21 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set Xcode
+      - name: Set Xcode Version
         run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Find and Build
+      - name: Build and Archive
         run: |
-          # البحث عن ملف المشروع تلقائياً
           PROJ_PATH=$(find . -name "*.xcodeproj" -not -path "*/.*" | head -n 1)
-          if [ -z "$PROJ_PATH" ]; then 
-            echo "Project not found!"
+          if [ -z "$PROJ_PATH" ]; then
+            echo "Project not found"
             exit 1
           fi
           
-          # استخراج الـ Scheme
           SCHEME_NAME=$(xcodebuild -list -project "$PROJ_PATH" | grep -A 5 "Schemes:" | tail -n 1 | xargs)
-          
-          echo "Building: $PROJ_PATH with Scheme: $SCHEME_NAME"
           
           xcodebuild archive \
             -project "$PROJ_PATH" \
@@ -40,19 +36,15 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO
 
-      - name: Create IPA
+      - name: Create IPA File
         run: |
           mkdir -p output/Payload
           APP_PATH=$(find build/iSign.xcarchive -name "*.app" | head -n 1)
-          if [ -z "$APP_PATH" ]; then 
-            echo "App file not found!"
-            exit 1
-          fi
           cp -r "$APP_PATH" output/Payload/
           cd output && zip -r iSign_Final.ipa Payload
 
-      - name: Upload
+      - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: iSign-App-Ready
+          name: iSign-IPA-Package
           path: output/iSign_Final.ipa
