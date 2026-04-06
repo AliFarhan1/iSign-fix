@@ -1,4 +1,4 @@
-name: iOS Build
+name: iOS Build and Export
 
 on:
   push:
@@ -17,12 +17,25 @@ jobs:
     - name: Set Xcode Version
       run: sudo xcode-select -s /Applications/Xcode.app
 
-    - name: Build iOS App
+    - name: Archive App
       run: |
-        xcodebuild build \
+        xcodebuild archive \
           -project "iSign/iSign.xcodeproj" \
           -scheme "iSign" \
+          -archivePath "build/iSign.xcarchive" \
           -sdk iphoneos \
-          -configuration Debug \
+          -configuration Release \
           CODE_SIGNING_ALLOWED=NO \
           CODE_SIGNING_REQUIRED=NO
+
+    - name: Create IPA (Ad-hoc/Testing)
+      run: |
+        mkdir -p build/Payload
+        cp -r "build/iSign.xcarchive/Products/Applications/iSign.app" build/Payload/
+        cd build && zip -r iSign.ipa Payload
+        
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: iSign-IPA
+        path: build/iSign.ipa
